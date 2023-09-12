@@ -1,0 +1,397 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title> Details page</title>
+  <link rel="icon" type="image/x-icon" href="https://asset.brandfetch.io/idFYwY0Gy1/id3Xagvgoe.png">
+
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script async src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+
+  <style>
+    #emp-table_filter {
+      display: none;
+    }
+    /* Style for the "X" button */
+.btn-clear {
+  position: relative;
+}
+
+/* Style for the tooltip */
+.btn-clear .tooltip {
+  visibility: hidden;
+  position: absolute;
+  background-color:transparent;
+  color:red;
+  text-align: center;
+  padding: 5px;
+  border-radius: 5px;
+  font-size: 12px;
+  width: 100px;
+  /* bottom: 125%; */
+  
+  left: 120%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.length-control-container {
+
+float: right;
+
+margin-top: 10px;
+
+}
+/* Show the tooltip on hover */
+.btn-clear:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+  </style>
+  <script>
+    var column_index = {
+      "Employee Id": 0,
+      "Resource Name": 1,
+      "Assigned Projects": 2,
+      "Clients": 3,
+      "Status": 4,
+      // "Comments": 5,
+      "Project Manager": 5,
+      "Reporting To": 6,
+      "Digital Lead":7
+    }
+    var table
+    var tbodyRef
+    let dleads=[]
+    let statusList=[]
+    function onlyUnique(value, index, array) {
+      return array.indexOf(value) === index;
+    }
+
+    function clearSession()
+    {
+        sessionStorage.clear()
+        document.getElementById("search-here").value = ''
+    }
+    function getJsonDataFormServer() {
+      return (function () {
+        var json = JSON.parse(`{{res|safe}}`.replace(/[\/\(\)\']/g, "&apos;"));
+        return json;
+      })();
+    }
+   
+    function jsFunction(value) {
+
+document.getElementById("search-here").value = ''
+sessionStorage.removeItem('search-value');
+
+if (sessionStorage.getItem("dig-lead") &&sessionStorage.getItem("dig-lead") != "Digital Lead" &&sessionStorage.getItem("status") && sessionStorage.getItem("status") !="Validation Status"){
+  $('#emp-table').DataTable().search('').columns().search('').order('asc').draw()
+ $('#emp-table').DataTable().columns(column_index["Digital Lead"]).search(sessionStorage.getItem("dig-lead")).draw()
+ $('#emp-table').DataTable().columns(column_index["Status"]).search(sessionStorage.getItem("status")).draw()
+ 
+}else if (sessionStorage.getItem("dig-lead") && sessionStorage.getItem("dig-lead") != "Digital Lead"){
+  $('#emp-table').DataTable().search('').columns().search('').order('asc').draw()
+ $('#emp-table').DataTable().columns(column_index["Digital Lead"]).search(sessionStorage.getItem("dig-lead")).draw()
+}
+else if(sessionStorage.getItem("status") && sessionStorage.getItem("status") != "Validation Status"){
+  $('#emp-table').DataTable().search('').columns().search('').order('asc').draw()
+ $('#emp-table').DataTable().columns(column_index["Status"]).search(sessionStorage.getItem("status")).draw()
+ } 
+else{
+$('#emp-table').DataTable().search('').columns().search('').order('asc').draw()
+}
+
+document.getElementById("drop-value").innerHTML = value
+sessionStorage.setItem("drop-value", value)
+
+}
+    function pageNumber(){
+        sessionStorage.setItem("page-number", table.page())
+        sessionStorage.setItem("page-length", table.page.len())
+      }
+    var dataFormServer
+    $(document).ready(function () {
+      if (performance.navigation.type == performance.navigation.TYPE_RELOAD) {
+        sessionStorage.clear()
+      }
+      const column=  sessionStorage.getItem("drop-value")
+      const searchValue=sessionStorage.getItem("search-value")
+      const digLead= sessionStorage.getItem("dig-lead")
+      const statusStore =sessionStorage.getItem('status')
+      const pageLength= sessionStorage.getItem('page-length')
+    
+      dataFormServer = getJsonDataFormServer();
+      document.getElementById("incorrect_count").innerHTML = 'Invalid count: ' + dataFormServer.incorrect_filled_count
+      document.getElementById("startDate").innerHTML = dataFormServer.logs_range.logs_start
+      document.getElementById("endDate").innerHTML = dataFormServer.logs_range.log_end
+      tbodyRef = document.getElementById('emp-table').getElementsByTagName('tbody')[0];
+      var employees = Object.keys(dataFormServer.billing_check);
+      for (var i = 0; i < employees.length; i++) {
+        var newRow = tbodyRef.insertRow();
+        var newCell = newRow.insertCell();
+        newCell.innerHTML = `${employees[i]}`
+        
+        var newCell = newRow.insertCell();
+        newCell.innerHTML = `${dataFormServer.billing_check[employees[i]][0]['Employee Name']}`
+        var newCell = newRow.insertCell();
+        newCell.innerHTML = `${dataFormServer.billing_check[employees[i]][0]['Assigned Projects'][0]}`
+        var newCell = newRow.insertCell();
+        newCell.innerHTML = `${dataFormServer.billing_check[employees[i]][0]['Assigned Projects'][1]}`
+        var newCell = newRow.insertCell();
+        newCell.innerHTML = `${dataFormServer.billing_check[employees[i]][0]['validation']}`
+        // var newCell = newRow.insertCell();
+        // newCell.innerHTML = dataFormServer.billing_check[employees[i]][0]['Comments'] ? `${dataFormServer.billing_check[employees[i]][0]['Comments']}`: ''
+        var newCell_pm = newRow.insertCell();
+        newCell_pm.innerHTML = `${dataFormServer.billing_check[employees[i]][0]['Project Manager']}`
+        newCell_pm.style.display = 'none';
+        var newCell_rm = newRow.insertCell();
+        newCell_rm.innerHTML = `${dataFormServer.billing_check[employees[i]][0]['Reporting To']}`
+        newCell_rm.style.display = 'none';
+        var newCell_dl = newRow.insertCell();
+        newCell_dl.innerHTML = `${dataFormServer.billing_check[employees[i]][0]['Digital Lead']}`
+        newCell_dl.style.display = 'none';
+        dleads.push( dataFormServer.billing_check[employees[i]][0]['Digital Lead'])
+        statusList.push(dataFormServer.billing_check[employees[i]][0]['validation'])
+        var newCell = newRow.insertCell();
+        var individual_data = JSON.stringify(dataFormServer.billing_check[employees[i]])
+
+        newCell.innerHTML = `<form action='/detail/${i}/{{c_key}}' method="POST">
+          <input type="hidden" id="filled" name="filled" value='${individual_data}' />
+          <input type="submit" value="View"
+            
+          class='btn btn-primary btn-sm' onclick="pageNumber()"/>
+        </form>`
+        
+      }
+      
+      table = $('#emp-table').DataTable({   
+      dom: '<"top"i><"length-control-container"l><"clear">rt<"bottom"p><"clear">',
+      });
+      $('#statusDDL').prop({
+            value: sessionStorage.getItem('status-column')? sessionStorage.getItem('status-column'):'',
+            text: sessionStorage.getItem('status-column')? sessionStorage.getItem('status-column'): document.getElementById('firststatus').value
+          });
+             for (const val of [...new Set( statusList)]) {
+            $('#statusDDL').append($(document.createElement('option')).prop({
+                value: val,
+                text:  val
+                
+            }))
+        }
+        $('#statusDDL').on('change',function(){
+           
+          table
+          .column(column_index['Status'])
+          .search(this.value == "Validation Status" ? '': this.value)
+          .draw();
+         sessionStorage.setItem('status',this.value)
+         sessionStorage.setItem('status-column',this.value)
+        })
+       
+      $('#dleadsDDL').prop({
+      
+        value: sessionStorage.getItem('lead-column')? sessionStorage.getItem('lead-column'):'',
+        text: sessionStorage.getItem('lead-column')? sessionStorage.getItem('lead-column'):document.getElementById('lead').value
+        });
+        for (const val of [...new Set( dleads)]) {
+          if (val!=='Siva Prasad DEGA'){
+            $('#dleadsDDL').append($(document.createElement('option')).prop({
+                value: val,
+                text:  val
+                
+            }))
+          }
+            
+        }
+        $('#dleadsDDL').on('change',function(){
+          
+          table
+          .column(column_index['Digital Lead'])
+          .search(this.value == "Digital Lead" ? '': this.value)
+          .draw();
+         sessionStorage.setItem('dig-lead',this.value)
+         sessionStorage.setItem('lead-column',this.value)
+    
+        })
+
+      $('#search-here').on('keyup change', function () {
+
+      table
+          .column(column_index[sessionStorage.getItem("drop-value")])
+          .search(this.value)
+          .draw();
+          sessionStorage.setItem("search-value",this.value)
+      });
+      if(digLead!=null && digLead!="Digital Lead"){
+          table
+          .column(column_index['Digital Lead'])
+          .search(sessionStorage.getItem('dig-lead'))
+          .draw();
+         }
+      if(statusStore!=null && statusStore!="Validation Status"){
+      table
+      .column(column_index['Status'])
+      .search(sessionStorage.getItem('status'))
+      .draw();
+      }
+      if(pageLength!==null){
+        table.page.len( pageLength).draw();
+      }
+      if((column==null||column==undefined)&&searchValue!=null){
+            
+            table
+              .column(column_index[sessionStorage.getItem("drop-value")])
+              .search(sessionStorage.getItem("search-value"))
+              .page(Number(sessionStorage.getItem("page-number"))).draw(false);
+      }
+      else if(column!=null&&searchValue!=null){
+        
+        table
+          .column(column_index[sessionStorage.getItem("drop-value")])
+          .search(sessionStorage.getItem("search-value"))
+          .page(Number(sessionStorage.getItem("page-number"))).draw(false);
+      }
+      else if(column==null&&searchValue==null && (sessionStorage.getItem("page-number") !=null | sessionStorage.getItem("page-number") !=undefined)){
+        table.page(Number(sessionStorage.getItem("page-number"))).draw(false);
+      }
+    
+      else if(column!=null&&searchValue==null&& (sessionStorage.getItem("page-number") !=null | sessionStorage.getItem("page-number") !=undefined)){
+        
+        table
+          .column(column_index[sessionStorage.getItem("drop-value")])
+          .page(Number(sessionStorage.getItem("page-number"))).draw(false);
+      }
+    }   
+    );
+    function clearFilters() {
+      $('#emp-table').DataTable().search('').columns().search('').order('asc').draw()
+
+      $('#emp-table').DataTable().page.len(10); // Set the default page length to 10 (or any desired value)
+
+      $('#emp-table').DataTable().page.info().length = 0; // Update the page info length to 0
+
+      $('#emp-table').DataTable().page('first').draw('page');
+      sessionStorage.clear()
+      document.getElementById("search-here").value = ''
+      document.getElementById("ddl").value = 'Employee Id'
+  
+      document.getElementById("dleadsDDL").selectedIndex = 0;
+      document.getElementById("statusDDL").selectedIndex = 0;
+    } 
+  //   function submitComments(){
+  //     const commentsSubmit = localStorage.getItem('comments');
+  // const escapedComments = commentsSubmit.replace(/\//g, ' ');
+  
+  // document.getElementsByClassName('input-comment')[0].value = escapedComments;
+  // document.getElementsByClassName('input-comment')[1].value = escapedComments;
+  //   }
+  </script>
+</head>
+
+<body >
+   <div class='container-fluid '>
+    <header style="background-color:#2986CE;" class='navbar'>
+      <a href="./" onclick="clearSession()"> <img height="64px"
+          src="https://www.mouritech.com/wp-content/uploads/2021/10/Logo-Edit-Final-Oct-12.png" /></a>
+      <div style="display: flex; justify-content:space-around; margin:20px">
+
+
+      </div>
+      
+    </header>
+    <br />
+    <div class="container">
+      <div style="display: flex">
+        <form action="/download" style="display:flex;" method="post" >
+          <input type="hidden" name="projectFilepath" value="{{ivd}}">
+          <label id="incorrect_count" class="col-lg" style="color: #fd5d3d;font-weight: 600;"> </label>
+          <button type="submit" style="border: none; color: #fd5d3d; background-color: transparent; font-size:large;; "><i class="fa fa-download" ></i></button>
+        </form>
+        
+        <h6 id="tsRange" class="col"></h6>
+        <h6  class=" d-flex-end" >Timesheet range: <span id="startDate"></span>
+          to <span id="endDate"></span>
+        </h6>
+      </div>
+
+      
+      <div class="d-flex flex-row justify-content-end mt-2">
+        <!-- <form action="/comments" method="post" >
+          {% if c_key | check_cache %}
+            <input type="hidden" name="projectFilepath" value="{{ivd}}">
+            <input type="hidden" name="c_key" value="{{c_key}}">
+            <input type="hidden" name="comment"  class="input-comment" value="{}">
+            <input type="hidden" name="fulldata" value="{{res}}">
+          {% else %}
+            <input type="hidden" name="projectFilepath" value="{{ivd}}">
+            <input type="hidden" name="c_key" value="{{c_key}}">
+            <input type="hidden" name="comment" class="input-comment" value="{}">
+          {% endif %}
+          <input type="submit" onclick="submitComments()" value="save comments" class="btn btn-outline-primary justify-content-start" style="margin-right:  130px; ;"></input>
+        </form>  -->
+        <select id="dleadsDDL" class="  dropdown-toogle">
+          <option  id="lead">Digital Lead</option>
+        </select> &NonBreakingSpace;&NonBreakingSpace;&NonBreakingSpace;
+        <select id="statusDDL" class=" dropdown-toggle">
+          <option id="firststatus">Validation Status</option>
+        </select>&NonBreakingSpace;&NonBreakingSpace;&NonBreakingSpace;
+        
+        <select id="ddl" name="ddl" onchange=jsFunction(this.value);
+          class=" dropdown-toogle">
+          <option value='Employee Id'>Emp Id</option>
+          <option value='Resource Name'>Assosiate Name</option>
+          <option value='Assigned Projects'>Project Name</option>
+          <option value='Clients'>Client Name</option>
+          
+          <option value='Project Manager'>Project Manager</option>
+          <option value='Reporting To'>Reporting Manager</option>
+          <!-- <option value='Comments'>Comment</option> -->
+        </select>&NonBreakingSpace;&NonBreakingSpace;&NonBreakingSpace;
+        <input id="search-here" placeholder="search" />&NonBreakingSpace;&NonBreakingSpace;&NonBreakingSpace;
+        <input id="drop-value" style="display: none;" />
+        <button class="btn btn-outline-secondary btn-clear" onclick="clearFilters()">
+          X
+          <span class="tooltip">Clear Filters</span>
+        </button>
+        
+      </div>
+      <div id='table' class="row ">
+     
+        <div class="col-md-12 my-1">
+          <table id="emp-table" class="table">
+            <thead>
+              <tr>
+                <th>Emp Id</th>
+                <th>Assosiate Name</th>
+                <th>Projects as per Saviom</th>
+                <th>Clients as per Saviom</th>
+                <th>Status</th>
+                <!-- <th>Comments</th> -->
+                <th style="display: none;">Project manager</th>
+                <th style="display: none;">Reporting to</th>
+                <th style="display: none;">Digital Lead</th>
+                <th style="display: none;">View details</th>
+
+              </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+</body>
+
+</html>

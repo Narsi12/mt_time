@@ -1,0 +1,30 @@
+version: "2.4"
+   
+services:
+
+    api:
+      container_name: logsapp 
+      image: logsapp_image  
+      build: 
+        context: .
+      ports:
+          - "8080:8080"
+      volumes:
+          - "D:/mt-timesheets-validation/UPLOADS:/apps/UPLOADS"
+      depends_on:
+            - redis
+            
+    redis: 
+     image: redislabs/redismod
+     container_name: redis
+     ports:
+       - '6379:6379'
+
+    nginx:
+        container_name: nginx
+        image: ngnix-custom
+        build: .\ngnix
+        ports:
+            - '8000:8000'
+        depends_on:
+           - api
